@@ -38,7 +38,7 @@ clean_game <- function(name_col){
 }
 
 #scrapes data from internet
-get_boxes <- function(abb){
+get_boxes <- function(abb, year){
   idx <- match(abb, abbs)
   abb %<>% tolower()
   skills_ls <- list(c('passing'), c('rushing'), c('defense'), c('kicking'), c('returning'), c('punting'),
@@ -57,6 +57,18 @@ get_boxes <- function(abb){
                       c('Date', 'Game', 'TotYds', 'RushYds', 'RushYPA', 'RushTD', 'PassYds', 'PassYPA',
                         'PassYPR', 'PassTD', 'KRYds', 'PRYds', 'PenYds'), 
                       c('Date', 'Game', 'PlusMinus', 'OINT', 'FumRec', 'INT', 'FUML'))
+  #make urls
+  passing_urls <- make_urls(team_names, 'passing', year)
+  rushing_urls <- make_urls(team_names, 'rushing', year)
+  defense_urls <- make_urls(team_names, 'defense', year)
+  kicking_urls <- make_urls(team_names, 'kicking', year)
+  punting_urls <- make_urls(team_names, 'punting', year)
+  returning_urls <- make_urls(team_names, 'returning', year)
+  downs_urls <- make_urls(team_names, 'downs', year)
+  yardage_urls <- make_urls(team_names, 'yardage', year)
+  turnovers_urls <- make_urls(team_names, 'turnovers', year)
+  
+  
   #list to be returned, contains all of the tables for the team
   team_skills_dfs <- list()
   
@@ -108,29 +120,12 @@ make_urls <- function(teams, skill, year){
   return(url_ls)
 }
 
-passing_urls <- make_urls(team_names, 'passing', '2020')
-rushing_urls <- make_urls(team_names, 'rushing', '2020')
-defense_urls <- make_urls(team_names, 'defense', '2020')
-kicking_urls <- make_urls(team_names, 'kicking', '2020')
-punting_urls <- make_urls(team_names, 'punting', '2020')
-returning_urls <- make_urls(team_names, 'returning', '2020')
-downs_urls <- make_urls(team_names, 'downs', '2020')
-yardage_urls <- make_urls(team_names, 'yardage', '2020')
-turnovers_urls <- make_urls(team_names, 'turnovers', '2020')
 
-#making a list, 32 elements which each contain the 9 dataframes for each team
-all_teams_all_skills <- list()
-for(team in 1:length(abbs)){
-  all_teams_all_skills[[team]] <- get_boxes(abbs[team])
-  names(all_teams_all_skills[[team]]) <- c('passing', 'rushing', 'defense', 'kicking', 'returning','punting',
-                                           'downs', 'yardage', 'turnovers')
-  
-}
-#naming the elements of the list with the team abbreviations
-names(all_teams_all_skills) <- abbs
+
+
 
 #function that merges all of the dataframes for a team into one, takes team abb, ex: CHI
-team_merge <- function(team_ex){
+team_merge <- function(team_ex, all_teams_all_skills){
   team_stuff <- all_teams_all_skills[[team_ex]]
   left <- team_stuff[[1]]
   left_suff <- paste0('.', names(team_stuff)[1])
@@ -160,20 +155,8 @@ big_team <- function(dat){
 
 
 
-all_teams_all_skills
-teamex <- 'BUF'
-team_stuff <- all_teams_all_skills[[teamex]]
-left <- team_stuff[[1]]
-team_stuff %>% names
-bears <- all_teams_all_skills$'CHI'
-all_teams_all_skills[[teamex]] %>% names
 
-bears %>% length
 
-pass.suff <- paste0('.', (all_teams_all_skills[[teamex]] %>% names)[1])
-russ.suff <- '.rush'
-beyblade <- inner_join(all_teams_all_skills$CHI[[1]], all_teams_all_skills$CHI[[8]], by = c('Date', 'Game'), suffix = c('', russ.suff))
-#beyblade$DATE %>% as.Date(format = '%m/%d')
 
 
 ###Need to add something to address character columns, instances of "-"
@@ -225,52 +208,44 @@ big_clean <- function(all_teams_merged, year){
 
 #####How the pipeline should proceed, sloppy as fuck above#####
 boxpipe <- function(year){
-  #first, all of the urls need to be created
-  passing_urls <- make_urls(team_names, 'passing', year)
-  rushing_urls <- make_urls(team_names, 'rushing', year)
-  defense_urls <- make_urls(team_names, 'defense', year)
-  kicking_urls <- make_urls(team_names, 'kicking', year)
-  punting_urls <- make_urls(team_names, 'punting', year)
-  returning_urls <- make_urls(team_names, 'returning', year)
-  downs_urls <- make_urls(team_names, 'downs', year)
-  yardage_urls <- make_urls(team_names, 'yardage', year)
-  turnovers_urls <- make_urls(team_names, 'turnovers', year)
+
   
   
+
   #making a list, 32 elements which each contain the 9 dataframes for each team
-  all_teams_all_skills <- list()
-  for(team in 1:length(abbs)){
-    all_teams_all_skills[[team]] <- get_boxes(abbs[team])
-    names(all_teams_all_skills[[team]]) <- c('passing', 'rushing', 'defense', 'kicking', 'returning','punting',
-                                             'downs', 'yardage', 'turnovers')
-  }
+  #all_teams_all_skills <- list()
+  #for(team in 1:length(abbs)){
+    #all_teams_all_skills[[team]] <- get_boxes(abbs[team], year)
+    #names(all_teams_all_skills[[team]]) <- c('passing', 'rushing', 'defense', 'kicking', 'returning','punting',
+     #                                        'downs', 'yardage', 'turnovers')
+  #}
   #naming the elements of the list with the team abbreviations
-  names(all_teams_all_skills) <- abbs
+  #names(all_teams_all_skills) <- abbs
   
   
   #now loop through the team_merge function, list again to hold 32 big dataframes and name conveniently
-  all_teams_merged <- list()
-  for(team in 1:length(abbs)){
-    merged_team <- team_merge(abbs[team])
-    all_teams_merged[[team]] <- merged_team
-  }
-  names(all_teams_merged) <- abbs
+  #all_teams_merged <- list()
+  #for(team in 1:length(abbs)){
+   # merged_team <- team_merge(abbs[team], all_teams_all_skills)
+    #all_teams_merged[[team]] <- merged_team
+  #}
+  #names(all_teams_merged) <- abbs
   
   #saving all merged dataframes so never have to scrape for them again
-  for(df in 1:length(all_teams_merged)){
-    dat.fm <- all_teams_merged[[df]] %>% as.data.frame()
-    named <- paste0("/Users/tristansetterdahl/Sports and Data Science/NFL Spread Models/Box Scores/Raw/", year, '/', tolower(abbs[df]), '_', year, '_box_data.csv')
-    write.csv(dat.fm, named, row.names = FALSE)
-  }
+  #for(df in 1:length(all_teams_merged)){
+   # dat.fm <- all_teams_merged[[df]] %>% as.data.frame()
+    #named <- paste0("/Users/tristansetterdahl/Sports and Data Science/NFL Spread Models/Box Scores/Raw/", year, '/', tolower(abbs[df]), '_', year, '_box_data.csv')
+    #write.csv(dat.fm, named, row.names = FALSE)
+  #}
   
   #for after has been scraped
-  #all_teams_merged <- list()
-  #for(abb in 1:length(abbs)){
-  #to_Read <- paste0(abbs[abb], '_2020_box_data.csv')
-  #team_dat <- read.csv(to_Read)
-  #all_teams_merged[[abb]] <- team_dat
-  #names(all_teams_merged)[abb] <- abbs[abb]
-  #}
+  all_teams_merged <- list()
+  for(abb in 1:length(abbs)){
+    to_Read <- paste0("/Users/tristansetterdahl/Sports and Data Science/NFL Spread Models/Box Scores/Raw/", year, '/', tolower(abbs[abb]), '_', year, '_box_data.csv')
+    team_dat <- read.csv(to_Read)
+    all_teams_merged[[abb]] <- team_dat
+    names(all_teams_merged)[abb] <- abbs[abb]
+    }
   
   
   ###now, lets clean. 
@@ -302,18 +277,20 @@ boxpipe <- function(year){
   
   clean_all_merged <- big_clean(all_teams_merged, year)
   
+  
   #now saving em
   #saving all merged dataframes so never have to scrape for them again
   for(df in 1:length(clean_all_merged)){
     dat.fm <- clean_all_merged[[df]] %>% as.data.frame()
     named <- paste0("/Users/tristansetterdahl/Sports and Data Science/NFL Spread Models/Box Scores/Averaged/", year, '/', tolower(abbs[df]), '_', year, '_avgs.csv')
+    
     write.csv(dat.fm, named, row.names = FALSE)
   }
   
   
   big_all_merged <- big_team(clean_all_merged)
-  
-  
+  big_name <- paste0("/Users/tristansetterdahl/Sports and Data Science/NFL Spread Models/Box Scores/Averaged/", year, '_box_avgs.csv')
+  write.csv(big_all_merged, big_name, row.names = FALSE)
   
   #return(big_all_merged)
   
@@ -323,7 +300,7 @@ boxpipe <- function(year){
   spread_dat <- read_csv(paste0("/Users/tristansetterdahl/Sports and Data Science/NFL Spread Models/Spreads/", year, '_nfl_spreads.csv'))
   
   underdog_frame <- spread_dat %>% select(c('Date', 'Underdog')) %>% rename(Team = Underdog)
-  underdog_frame %>% head
+  #underdog_frame %>% head
   favorite_frame <- spread_dat %>% select(c('Date', 'Favorite')) %>% rename(Team = Favorite)
   
   underdogs <- left_join(underdog_frame, big_all_merged, by = c('Date', 'Team')) 
@@ -338,7 +315,7 @@ boxpipe <- function(year){
   
   
   
-  full_data_left <- left_join(big_all_merged, favorites, by = c('Date', 'Favorite', 'Underdog'))
+  full_data_left <- left_join(spread_dat, favorites, by = c('Date', 'Favorite', 'Underdog'))
   full_data <- left_join(full_data_left, underdogs, by = c('Date', 'Underdog', 'Favorite'))
   
   #oakland to las vegas name change accounted for here
@@ -352,25 +329,12 @@ boxpipe <- function(year){
 
 
 
-for(i in 2019:2021){
+for(i in 2018:2021){
   boxpipe(i)
 }
 
-boxpipe(2018)
 
 
-boxpipe(2019)
-
-boxpipe(2020)
-
-boxpipe(2021)
 
 
-waah <- read_csv("/Users/tristansetterdahl/Sports and Data Science/NFL Spread Models/Box Scores/Full/2018_favorites_avgs.csv")
-waah %>% head
-waahud <- read_csv("/Users/tristansetterdahl/Sports and Data Science/NFL Spread Models/Box Scores/Full/2018_underdog_avgs.csv")
-waahud %>% head
-
-waahud$Favorite[100:130]
-spreads18$Favorite[waahud$Favorite %>% is.na]
 
