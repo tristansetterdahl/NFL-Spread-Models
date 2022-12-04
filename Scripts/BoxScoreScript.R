@@ -138,16 +138,23 @@ team_merge <- function(team_ex, all_teams_all_skills){
     left <- new_df
     left_suff <- ''
   }
+  
   return(new_df)
 }
 
 
 #function that combines all team data into on big tibble and adds team name
-big_team <- function(dat){
+big_team <- function(dat, year){
   dat[[1]] <- dat[[1]] %>% mutate(Team = abbs[1])
   big_dat <- dat[[1]]
   for(i in 2:length(abbs)){
-    dat[[i]] <- dat[[i]] %>% mutate(Team = abbs[i])
+    if(year < 2020 & abbs[i] == 'LV'){
+      tm = 'OAK'
+    }
+    else{
+      tm = abbs[i]
+    }
+    dat[[i]] <- dat[[i]] %>% mutate(Team = tm)
     big_dat <- big_dat %>% rbind(dat[[i]])
   }
   return(big_dat)
@@ -161,16 +168,16 @@ big_team <- function(dat){
 
 ###Need to add something to address character columns, instances of "-"
 big_clean <- function(all_teams_merged, year){
+  scores_dat <- read_csv(paste0("/Users/tristansetterdahl/Sports and Data Science/NFL Spread Models/Spreads/", year, '_nfl_spreads.csv'))
   clean_merged <- list()
   for(i in 1:length(abbs)){
-    curr_team <- all_teams_merged[[abbs[i]]]
+    curr_team <- all_teams_merged[[abbs[i]]] 
+    
+    
     
     #cleaning character columns, making them integer columns
-    curr_team$XPPct <- curr_team$XPPct %>% as.double
-    curr_team$PRAvg <- curr_team$PRAvg %>% as.double
-    curr_team$KRAvg <- curr_team$KRAvg %>% as.double
-    curr_team$PuntAvg <- curr_team$PuntAvg %>% as.double
-    curr_team$FGPct <- curr_team$FGPct %>% as.double
+    curr_team[, 3:ncol(curr_team1)] %<>% mutate_if(is.character, as.double)
+    curr_team %<>% filter(!is.na(Comp)) #this removes games where data wasn't collected (gb vs oak 8/22/2019)
     
     #remove dublicate columns:
     #columns that were duplicated, double checked no information deleted
@@ -180,15 +187,32 @@ big_clean <- function(all_teams_merged, year){
                    'FUML', 'FUM')
     curr_team %<>% select(-all_of(dupl_cols))
     
+    #adds year and makes date
+    
+    curr_team$Date <- with_year(curr_team$Date, season = year)
+    
+    #adding team's scores
+      #quick fix for when fn feeds LV but needs to find oak
+    if(year < 2020 & abbs[i] == 'LV'){
+      tm <- 'OAK'
+    }
+    else{
+      tm <- abbs[i]
+    }
+    underdog_scores <- scores_dat %>% select(c('Date', 'UDogScore', 'Underdog')) %>% rename(Team = Underdog, PF = UDogScore) %>% filter(Team == tm)
+    
+    favorite_scores <- scores_dat %>% select(c('Date', 'FavScore', 'Favorite')) %>% rename(Team = Favorite, PF = FavScore) %>% filter(Team == tm)
+    scores <- rbind(underdog_scores, favorite_scores) %>% arrange(Date) %>% select(-Team)
+    
+    curr_team <- left_join(curr_team, scores, by = 'Date')
+    
     #Reverse order
     curr_team <- curr_team[nrow(curr_team):1,]
     
     #rolling averages: why is this broken?
     curr_team[, 3:ncol(curr_team)] <- lag(rollapplyr(curr_team[, 3:ncol(curr_team)], 25, mean, na.rm = TRUE, partial = TRUE))
     
-    #adds year and makes date
     
-    curr_team$Date <- with_year(curr_team$Date, season = year)
     
     #Cleans opponent info
     curr_team$Game <- clean_game(curr_team$Game)
@@ -288,7 +312,7 @@ boxpipe <- function(year){
   }
   
   
-  big_all_merged <- big_team(clean_all_merged)
+  big_all_merged <- big_team(clean_all_merged, year)
   big_name <- paste0("/Users/tristansetterdahl/Sports and Data Science/NFL Spread Models/Box Scores/Averaged/", year, '_box_avgs.csv')
   write.csv(big_all_merged, big_name, row.names = FALSE)
   
@@ -332,8 +356,6 @@ boxpipe <- function(year){
 for(i in 2018:2021){
   boxpipe(i)
 }
-
-
 
 
 

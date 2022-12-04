@@ -149,13 +149,22 @@ mean((train$FavScore + train$UDogScore) > mean(train$FavScore + train$UDogScore)
 
 #does home field advantage mean anything?
 ggplot(data = dat) + geom_bar(mapping = aes(x = Winner, fill = Where))
+table(dat[dat$Where == 'Home',]$Winner)
+table(dat[dat$Where == 'Away',]$Winner)
+
 ggplot(data = dat) + geom_bar(mapping = aes(x = SpreadWin, fill = Where))
+table(dat[dat$Where == 'Home',]$SpreadWin)
+table(dat[dat$Where == 'Away',]$SpreadWin)
 
 
+#looking at overunder
+barplot(dat$OverUnder %>% table) 
+table(dat$OverUnder) #Under hits a little bit more than the over does.
+mean(dat$Total >= dat$OULine + 10) #23.5% of games cover the over line by 10 or more
+mean(dat$Total <= dat$OULine - 10) #23.2% of games fall 10 or more short of the line
+mean(dat$Total == dat$OULine) #1.3% of games push the line, 14 games
 
-
-
-#Outliers to explore removing: check if medians and means move closer together. stuff like that. normalizing affects to the distributions
+#Outliers to explore removing: check if medians and means move closer together. stuff like that. normalizing effects to the distributions
 (1.5 * IQR(dat$Total)) + quantile(dat$Total, .75) #games with totals over 84.5. 11 games
 quantile(dat$Total, .25) - (1.5 * IQR(dat$Total))  #games with less than 8.5. 1 game
 
@@ -170,4 +179,12 @@ quantile(dat$Differential, .25) - (1.5 * IQR(dat$Differential))  #games with dif
 
 sum(dat$Differential < -28)
 dat[dat$Differential < -28, c('Date', 'Favorite', 'Underdog', 'FavScore', 'UDogScore', 'Spread')]
-     
+
+#also will probably remove ties and pushes
+sum(dat$SpreadWin == 'Push') #22 pushes
+sum(dat$Winner == 'Tie') #5 ties
+
+
+colnames(dat[21:83])
+out_idxs <- (dat$Total > 84.5 | dat$Total < 8.5 | dat$FavScore > 52.5 | dat$FavScore < .5 | dat$UDogScore > 46.5 | dat$Differential > 39.5 | dat$Differential < -28.5) %>% which
+dat[out_idxs,]
