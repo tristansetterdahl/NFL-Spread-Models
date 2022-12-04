@@ -16,7 +16,7 @@ train_idxs <- sample(1:nrow(dat), .75*nrow(dat), replace = FALSE)
 train <- dat[train_idxs, ]
 test <- dat[-train_idxs,]
 
-
+#data without outliers
 colnames(dat)
 #response variables of interest:
 ##FavScore
@@ -165,26 +165,25 @@ mean(dat$Total <= dat$OULine - 10) #23.2% of games fall 10 or more short of the 
 mean(dat$Total == dat$OULine) #1.3% of games push the line, 14 games
 
 #Outliers to explore removing: check if medians and means move closer together. stuff like that. normalizing effects to the distributions
-(1.5 * IQR(dat$Total)) + quantile(dat$Total, .75) #games with totals over 84.5. 11 games
-quantile(dat$Total, .25) - (1.5 * IQR(dat$Total))  #games with less than 8.5. 1 game
+(1.5 * IQR(train$Total)) + quantile(train$Total, .75) #games with totals over 84.5. 11 games
+quantile(train$Total, .25) - (1.5 * IQR(train$Total))  #games with less than 8.5. 1 game
 
-(1.5 * IQR(dat$FavScore)) + quantile(dat$FavScore, .75) #games where favorite scores 52.5+. 5 games
-quantile(dat$FavScore, .25) - (1.5 * IQR(dat$FavScore))  #favorites get blanked. 5 games
+(1.5 * IQR(train$FavScore)) + quantile(train$FavScore, .75) #games where favorite scores 52.5+. 5 games
+quantile(train$FavScore, .25) - (1.5 * IQR(train$FavScore))  #favorites get blanked. 5 games
 
-1.5 * IQR(dat$UDogScore) + quantile(dat$UDogScore, .75) #gunderdog scores 46.5+. 8 games
-quantile(dat$UDogScore, .25) - (1.5 * IQR(dat$UDogScore))  #Nothing to drop here
+1.5 * IQR(train$UDogScore) + quantile(train$UDogScore, .75) #gunderdog scores 46.5+. 8 games
+quantile(train$UDogScore, .25) - (1.5 * IQR(train$UDogScore))  #Nothing to drop here
 
-1.5 * IQR(dat$Differential) + quantile(dat$Differential, .75) #games with diffs over 39.5. 10 games
-quantile(dat$Differential, .25) - (1.5 * IQR(dat$Differential))  #games with diffs of -28.5 or less. 13 games
+1.5 * IQR(train$Differential) + quantile(train$Differential, .75) #games with diffs over 39.5. 10 games
+quantile(train$Differential, .25) - (1.5 * IQR(train$Differential))  #games with diffs of -28.5 or less. 13 games
 
-sum(dat$Differential < -28)
-dat[dat$Differential < -28, c('Date', 'Favorite', 'Underdog', 'FavScore', 'UDogScore', 'Spread')]
+sum(train$Differential < -28)
+train[train$Differential < -28, c('Date', 'Favorite', 'Underdog', 'FavScore', 'UDogScore', 'Spread')]
 
 #also will probably remove ties and pushes
-sum(dat$SpreadWin == 'Push') #22 pushes
-sum(dat$Winner == 'Tie') #5 ties
+sum(train$SpreadWin == 'Push') #22 pushes
+sum(train$Winner == 'Tie') #5 ties
 
-
-colnames(dat[21:83])
+dat %>% colnames
 out_idxs <- (dat$Total > 84.5 | dat$Total < 8.5 | dat$FavScore > 52.5 | dat$FavScore < .5 | dat$UDogScore > 46.5 | dat$Differential > 39.5 | dat$Differential < -28.5) %>% which
 dat[out_idxs,]
