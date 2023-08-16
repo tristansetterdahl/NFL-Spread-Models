@@ -243,10 +243,21 @@ full_spreads <- function(year){
   return(games)
 }
 
-for(year in 2018:2021){
+for(year in 2022:2022){
   setwd("NFL Spread Models/Spreads")
   full_spreads(year) #defined line 263
 }
 
-getwd() 
+setwd("/Users/tristansetterdahl/Sports and Data Science") 
+getwd()
+
+
+why <- read_csv("2022_nfl_spreads.csv")
+
+why %>% tail
+
+
+abbs[match(team_col %>% str_sub(1, 13), team_names %>% str_sub(1,13))]
+match('Dal' %>% str_sub(1, 13), c('Dal', 'Chicago Bears') %>% str_sub(1, 13))
+
 
