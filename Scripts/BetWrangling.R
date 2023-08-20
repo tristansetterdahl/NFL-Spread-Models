@@ -35,17 +35,37 @@ nfl_abb <- function(team_col, year){
                     'New England Patriots', 'New Orleans Saints', 'New York Giants', 'New York Jets',
                     'Philadelphia Eagles', 'Pittsburgh Steelers', 'San Francisco 49ers', 'Seattle Seahawks',
                     'Tampa Bay Buccaneers', 'Tennessee Titans', 'Washington Football Team')
+  #commanders
+  team_names22 <- c('Arizona Cardinals', 'Atlanta Falcons', 'Baltimore Ravens', 'Buffalo Bills', 'Carolina Panthers',
+                    'Chicago Bears', 'Cincinnati Bengals', 'Cleveland Browns', 'Dallas Cowboys',
+                    'Denver Broncos', 'Detroit Lions', 'Green Bay Packers', 'Houston Texans',
+                    'Indianapolis Colts', 'Jacksonville Jaguars', 'Kansas City Chiefs', 'Las Vegas Raiders',
+                    'Los Angeles Chargers', 'Los Angeles Rams', 'Miami Dolphins', 'Minnesota Vikings',
+                    'New England Patriots', 'New Orleans Saints', 'New York Giants', 'New York Jets',
+                    'Philadelphia Eagles', 'Pittsburgh Steelers', 'San Francisco 49ers', 'Seattle Seahawks',
+                    'Tampa Bay Buccaneers', 'Tennessee Titans', 'Washington Commanders')
  
   
   if(year < 2020){
     abbs <- abbs18
     team_names <- team_names18
   }
-  else{
+  else if(year > 2020 & year < 2022){
     abbs <- abbs20
     team_names <- team_names20
   }
+  else{
+    abbs <- abbs20 #no abb change for commanders in 2022 so can use same
+    team_names <- team_names22
+  }
     
+  #in 2022 data, dallas was listed as Dal (3) which did not match to a team as below.
+  #This chunk finds possible abbreviated teams and converts them to team name so next chunk works
+  early_abbd <- which(str_length(team_col) < 10)
+  team_col[early_abbd] <- abbs[match(team_col[early_abbd] %>% sub('\\ .*', '', .) %>% toupper(), abbs)]
+  team_col[early_abbd] <- team_names[match(team_col[early_abbd], abbs)]
+  
+  
   #team names are reassigned to correct abbreviations based on first 13 characters (LA Teams make this needed) in names 
   #(keeps seeds out of playoff names, shortest team names are 13 characters)
   team_col_abbs <- abbs[match(team_col %>% str_sub(1, 13), team_names %>% str_sub(1,13))]
@@ -252,12 +272,5 @@ setwd("/Users/tristansetterdahl/Sports and Data Science")
 getwd()
 
 
-why <- read_csv("2022_nfl_spreads.csv")
-
-why %>% tail
-
-
-abbs[match(team_col %>% str_sub(1, 13), team_names %>% str_sub(1,13))]
-match('Dal' %>% str_sub(1, 13), c('Dal', 'Chicago Bears') %>% str_sub(1, 13))
 
 
